@@ -10,7 +10,7 @@ usage() {
   echo "Usage: install.sh [--local] [--method pipx|pip] [--repo OWNER/REPO] [--version latest|vX.Y.Z]"
   echo "Examples:"
   echo "  ./scripts/install.sh --local"
-  echo "  ./scripts/install.sh --repo myname/term-workspace --version v0.2.2"
+  echo "  ./scripts/install.sh --repo myname/term-workspace --version v0.2.3"
   echo "  METHOD=pip ./scripts/install.sh --repo myname/term-workspace"
 }
 

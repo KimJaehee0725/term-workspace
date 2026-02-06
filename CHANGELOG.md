@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3 - 2026-02-06
+
+- Route status-panel directory/file actions to the dedicated right-bottom command pane
+- Keep main left work pane uninterrupted while navigating or opening files from the side panel
+
 ## 0.2.2 - 2026-02-06
 
 - Restrict drag-copy behavior to the active pane only
