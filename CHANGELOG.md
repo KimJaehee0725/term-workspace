@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 - 2026-02-06
+
+- Add clickable file-open action in status panel tree for common text/code formats
+- Supported extensions: `.py`, `.pyi`, `.sh`, `.bash`, `.zsh`, `.json`, `.jsonl`, `.yaml`, `.yml`, `.toml`, `.ini`, `.cfg`, `.conf`, `.txt`, `.md`
+- Open files in left pane using `$VISUAL`/`$EDITOR` with fallback editor detection
+
 ## 0.2.0 - 2026-02-06
 
 - Rename package/project from `tmux-devpanel` to `term-workspace`

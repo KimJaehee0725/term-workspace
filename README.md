@@ -29,7 +29,7 @@ python3 -m pip install --user git+https://github.com/KimJaehee0725/term-workspac
 ### Option 3: from release wheel
 
 ```bash
-python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.2.0/term_workspace-0.2.0-py3-none-any.whl
+python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.2.1/term_workspace-0.2.1-py3-none-any.whl
 ```
 
 ## Screenshot
@@ -52,6 +52,8 @@ term-workspace --no-attach
 ## Interaction
 
 - click directory in right tree: left pane runs `cd` to that directory
+- click supported files in right tree: open in left pane editor (`$VISUAL`/`$EDITOR`, fallback `nvim`/`vim`/`nano`/`vi`/`less`)
+  - supported: `.py`, `.pyi`, `.sh`, `.bash`, `.zsh`, `.json`, `.jsonl`, `.yaml`, `.yml`, `.toml`, `.ini`, `.cfg`, `.conf`, `.txt`, `.md`
 - drag center border: resize left/right pane width
 - pane drag selection is disabled to avoid accidental cross-pane drag overlap
 
@@ -83,5 +85,5 @@ Release flow:
 
 1. Update version in `pyproject.toml` and `src/term_workspace/__init__.py`
 2. Commit and push
-3. Create and push tag (example `v0.2.0`)
+3. Create and push tag (example `v0.2.1`)
 4. Workflow builds `wheel` / `sdist` and attaches them to GitHub Release

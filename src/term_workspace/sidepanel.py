@@ -143,6 +143,24 @@ class StatsCollector:
 
 
 class SidePanelApp(App):
+    OPENABLE_SUFFIXES = {
+        ".py",
+        ".pyi",
+        ".sh",
+        ".bash",
+        ".zsh",
+        ".json",
+        ".jsonl",
+        ".yaml",
+        ".yml",
+        ".toml",
+        ".ini",
+        ".cfg",
+        ".conf",
+        ".txt",
+        ".md",
+    }
+
     CSS = """
     Screen {
       layout: vertical;
@@ -169,6 +187,8 @@ class SidePanelApp(App):
         self.target_pane = target_pane
         self.collector = StatsCollector()
         self.last_selected_dir = str(root_path)
+        self.last_selected_file = ""
+        self.editor_cmd = self._resolve_editor_cmd()
 
     def compose(self) -> ComposeResult:
         yield DirectoryTree(str(self.root_path), id="tree")
@@ -226,15 +246,26 @@ class SidePanelApp(App):
             text.append("GPU metrics unavailable\n")
 
         text.append(f"Selected Dir: {self.last_selected_dir}")
+        if self.last_selected_file:
+            text.append(f"\nSelected File: {self.last_selected_file}")
+        text.append(f"\nEditor: {self.editor_cmd}")
         self.query_one("#stats", Static).update(text)
 
-    def _send_cd_to_target(self, path: Path) -> None:
+    def _resolve_editor_cmd(self) -> str:
+        env_editor = (os.environ.get("VISUAL") or os.environ.get("EDITOR") or "").strip()
+        if env_editor:
+            return env_editor
+        for candidate in ("nvim", "vim", "nano", "vi", "less"):
+            if shutil.which(candidate):
+                return candidate
+        return "vi"
+
+    def _send_command_to_target(self, command: str) -> None:
         if not self.target_pane:
             return
-        cmd = f"cd {shlex.quote(str(path))}"
         try:
             subprocess.run(
-                ["tmux", "send-keys", "-t", self.target_pane, cmd, "C-m"],
+                ["tmux", "send-keys", "-t", self.target_pane, command, "C-m"],
                 check=False,
                 capture_output=True,
                 text=True,
@@ -242,10 +273,33 @@ class SidePanelApp(App):
         except Exception:
             return
 
+    def _send_cd_to_target(self, path: Path) -> None:
+        self._send_command_to_target(f"cd {shlex.quote(str(path))}")
+
+    def _is_openable_file(self, path: Path) -> bool:
+        return path.suffix.lower() in self.OPENABLE_SUFFIXES
+
+    def _send_open_file_to_target(self, path: Path) -> None:
+        try:
+            editor_parts = shlex.split(self.editor_cmd)
+        except ValueError:
+            editor_parts = []
+        if not editor_parts:
+            editor_parts = ["vi"]
+        cmd = shlex.join([*editor_parts, str(path)])
+        self._send_command_to_target(cmd)
+
     def on_directory_tree_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
         path = event.path.resolve()
         self.last_selected_dir = str(path)
         self._send_cd_to_target(path)
+        self._refresh_stats()
+
+    def on_directory_tree_file_selected(self, event: DirectoryTree.FileSelected) -> None:
+        path = event.path.resolve()
+        self.last_selected_file = str(path)
+        if self._is_openable_file(path):
+            self._send_open_file_to_target(path)
         self._refresh_stats()
 
 
