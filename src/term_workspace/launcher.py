@@ -38,6 +38,13 @@ def tmux_capture(args: list[str]) -> str:
     return out
 
 
+def tmux_capture_optional(args: list[str]) -> Optional[str]:
+    result = tmux(args, check=False, capture=True)
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
 def session_exists(session_name: str) -> bool:
     result = tmux(["has-session", "-t", session_name], check=False, capture=True)
     return result.returncode == 0
@@ -171,7 +178,8 @@ def sidepanel_command(root_dir: str, left_pane: str) -> str:
     if sidepanel_bin:
         cmd = [sidepanel_bin, "--root", root_dir, "--target-pane", left_pane]
     else:
-        cmd = [sys.executable, "-m", "term_workspace.sidepanel", "--root", root_dir, "--target-pane", left_pane]
+        sidepanel_script = str(Path(__file__).with_name("sidepanel.py"))
+        cmd = [sys.executable, sidepanel_script, "--root", root_dir, "--target-pane", left_pane]
     return shlex.join(cmd)
 
 
@@ -193,22 +201,169 @@ def initial_tmux_size() -> tuple[int, int]:
     return width, height
 
 
-def create_session(session_name: str, root_dir: str, panel_width_percent: int) -> None:
+def _clean_tmux_option(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    return value.strip().strip('"').strip("'")
+
+
+def pane_exists(pane_id: str) -> bool:
+    if not pane_id:
+        return False
+    result = tmux(["display-message", "-p", "-t", pane_id, "#{pane_id}"], check=False, capture=True)
+    return result.returncode == 0
+
+
+def read_session_option(session_name: str, option_name: str) -> str:
+    value = tmux_capture_optional(["show-options", "-t", session_name, "-v", option_name])
+    return _clean_tmux_option(value)
+
+
+def find_status_pane(session_name: str) -> str:
+    configured = read_session_option(session_name, "@term_workspace_status_pane")
+    if pane_exists(configured):
+        return configured
+
+    panes = tmux_capture_optional(
+        [
+            "list-panes",
+            "-t",
+            f"{session_name}:0",
+            "-F",
+            "#{pane_id}\t#{pane_start_command}\t#{pane_current_command}\t#{pane_left}",
+        ]
+    )
+    if not panes:
+        return ""
+
+    rows: list[tuple[str, str, str, int]] = []
+    for raw in panes.splitlines():
+        parts = raw.split("\t")
+        if len(parts) != 4:
+            continue
+        pane_id, start_cmd, current_cmd, pane_left_raw = parts
+        try:
+            pane_left = int(pane_left_raw)
+        except ValueError:
+            pane_left = 0
+        rows.append((pane_id, start_cmd, current_cmd, pane_left))
+
+    for pane_id, start_cmd, _, _ in rows:
+        if "sidepanel.py" in start_cmd or "term-sidepanel" in start_cmd:
+            return pane_id
+
+    if not rows:
+        return ""
+    rows.sort(key=lambda row: row[3], reverse=True)
+    return rows[0][0]
+
+
+def ensure_command_pane(
+    session_name: str,
+    root_dir: str,
+    panel_command_height: int,
+) -> None:
+    existing_command_pane = read_session_option(session_name, "@term_workspace_command_pane")
+    if pane_exists(existing_command_pane):
+        return
+
+    status_pane = find_status_pane(session_name)
+    if not pane_exists(status_pane):
+        return
+
+    command_height = max(3, min(panel_command_height, 20))
+    command_pane = tmux_capture_optional(
+        [
+            "split-window",
+            "-v",
+            "-t",
+            status_pane,
+            "-l",
+            str(command_height),
+            "-c",
+            root_dir,
+            "-P",
+            "-F",
+            "#{pane_id}",
+        ]
+    )
+    if not command_pane:
+        return
+
+    panel_cmd = sidepanel_command(root_dir, command_pane)
+    tmux(["respawn-pane", "-k", "-t", status_pane, panel_cmd], check=False)
+    tmux(["set-option", "-t", session_name, "@term_workspace_command_pane", command_pane], check=False)
+    tmux(["set-option", "-t", session_name, "@term_workspace_status_pane", status_pane], check=False)
+
+
+def create_session(
+    session_name: str,
+    root_dir: str,
+    panel_width_percent: int,
+    panel_command_height: int,
+) -> None:
     width, height = initial_tmux_size()
     tmux(["new-session", "-d", "-s", session_name, "-c", root_dir, "-x", str(width), "-y", str(height)])
 
+    status_pane = ""
     try:
-        tmux(["split-window", "-h", "-t", f"{session_name}:0", "-p", str(panel_width_percent), "-c", root_dir])
+        status_pane = tmux_capture(
+            [
+                "split-window",
+                "-h",
+                "-t",
+                f"{session_name}:0",
+                "-p",
+                str(panel_width_percent),
+                "-c",
+                root_dir,
+                "-P",
+                "-F",
+                "#{pane_id}",
+            ]
+        )
     except subprocess.CalledProcessError:
         # Fallback for tmux environments that reject percent-based sizing.
         right_width = max(30, int(width * (panel_width_percent / 100.0)))
-        tmux(["split-window", "-h", "-t", f"{session_name}:0", "-l", str(right_width), "-c", root_dir])
+        status_pane = tmux_capture(
+            [
+                "split-window",
+                "-h",
+                "-t",
+                f"{session_name}:0",
+                "-l",
+                str(right_width),
+                "-c",
+                root_dir,
+                "-P",
+                "-F",
+                "#{pane_id}",
+            ]
+        )
+
+    command_height = max(3, min(panel_command_height, max(3, height // 2)))
+    command_pane = tmux_capture(
+        [
+            "split-window",
+            "-v",
+            "-t",
+            status_pane,
+            "-l",
+            str(command_height),
+            "-c",
+            root_dir,
+            "-P",
+            "-F",
+            "#{pane_id}",
+        ]
+    )
 
     left_pane = tmux_capture(["display-message", "-p", "-t", f"{session_name}:0.0", "#{pane_id}"])
-    right_pane = tmux_capture(["display-message", "-p", "-t", f"{session_name}:0.1", "#{pane_id}"])
 
-    panel_cmd = sidepanel_command(root_dir, left_pane)
-    tmux(["respawn-pane", "-k", "-t", right_pane, panel_cmd], check=False)
+    panel_cmd = sidepanel_command(root_dir, command_pane)
+    tmux(["respawn-pane", "-k", "-t", status_pane, panel_cmd], check=False)
+    tmux(["set-option", "-t", session_name, "@term_workspace_command_pane", command_pane], check=False)
+    tmux(["set-option", "-t", session_name, "@term_workspace_status_pane", status_pane], check=False)
     tmux(["select-pane", "-t", left_pane], check=False)
 
 
@@ -222,6 +377,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=int(os.environ.get("PANEL_WIDTH_PERCENT", "40")),
         help="right pane width percent",
+    )
+    parser.add_argument(
+        "--panel-command-height",
+        type=int,
+        default=int(os.environ.get("PANEL_COMMAND_HEIGHT", "8")),
+        help="height (rows) of right-bottom command pane used by side panel actions",
     )
     return parser.parse_args()
 
@@ -239,9 +400,12 @@ def main() -> int:
         return 1
 
     panel_width = max(20, min(70, int(args.panel_width_percent)))
+    panel_command_height = max(3, min(20, int(args.panel_command_height)))
 
     if not session_exists(args.session):
-        create_session(args.session, root_dir, panel_width)
+        create_session(args.session, root_dir, panel_width, panel_command_height)
+    else:
+        ensure_command_pane(args.session, root_dir, panel_command_height)
 
     configure_interaction(args.session)
     configure_clipboard(args.session)
