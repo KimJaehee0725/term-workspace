@@ -10,8 +10,8 @@ usage() {
   echo "Usage: install.sh [--local] [--method pipx|pip] [--repo OWNER/REPO] [--version latest|vX.Y.Z]"
   echo "Examples:"
   echo "  ./scripts/install.sh --local"
-  echo "  ./scripts/install.sh --repo myname/tmux-devpanel --version v0.1.0"
-  echo "  METHOD=pip ./scripts/install.sh --repo myname/tmux-devpanel"
+  echo "  ./scripts/install.sh --repo myname/term-workspace --version v0.2.0"
+  echo "  METHOD=pip ./scripts/install.sh --repo myname/term-workspace"
 }
 
 while [ "$#" -gt 0 ]; do

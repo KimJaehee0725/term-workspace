@@ -140,7 +140,7 @@ def sidepanel_command(root_dir: str, left_pane: str) -> str:
     if sidepanel_bin:
         cmd = [sidepanel_bin, "--root", root_dir, "--target-pane", left_pane]
     else:
-        cmd = [sys.executable, "-m", "term_devpanel.sidepanel", "--root", root_dir, "--target-pane", left_pane]
+        cmd = [sys.executable, "-m", "term_workspace.sidepanel", "--root", root_dir, "--target-pane", left_pane]
     return shlex.join(cmd)
 
 

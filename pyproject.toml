@@ -3,8 +3,8 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tmux-devpanel"
-version = "0.1.1"
+name = "term-workspace"
+version = "0.2.0"
 description = "tmux workspace launcher with clickable directory side panel and GPU/CPU monitoring"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -32,8 +32,8 @@ Homepage = "https://github.com/KimJaehee0725/term-workspace"
 Issues = "https://github.com/KimJaehee0725/term-workspace/issues"
 
 [project.scripts]
-term-workspace = "term_devpanel.launcher:main"
-term-sidepanel = "term_devpanel.sidepanel:main"
+term-workspace = "term_workspace.launcher:main"
+term-sidepanel = "term_workspace.sidepanel:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

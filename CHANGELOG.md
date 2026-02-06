@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 - 2026-02-06
+
+- Rename package/project from `tmux-devpanel` to `term-workspace`
+- Rename Python module path from `term_devpanel` to `term_workspace`
+- Add README screenshot section with status panel image (`assets/status-panel.png`)
+
 ## 0.1.1 - 2026-02-06
 
 - Fix: Linux/headless tmux environments no longer fail with `size missing`

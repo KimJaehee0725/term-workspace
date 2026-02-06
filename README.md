@@ -1,4 +1,4 @@
-# tmux-devpanel
+# term-workspace
 
 `tmux` workspace launcher with:
 - right-side clickable directory tree
@@ -29,8 +29,12 @@ python3 -m pip install --user git+https://github.com/KimJaehee0725/term-workspac
 ### Option 3: from release wheel
 
 ```bash
-python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.1.1/tmux_devpanel-0.1.1-py3-none-any.whl
+python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.2.0/term_workspace-0.2.0-py3-none-any.whl
 ```
+
+## Screenshot
+
+![term-workspace status panel](assets/status-panel.png)
 
 ## Run
 
@@ -77,7 +81,7 @@ This repo includes GitHub Actions workflow at `.github/workflows/release.yml`.
 
 Release flow:
 
-1. Update version in `pyproject.toml` and `src/term_devpanel/__init__.py`
+1. Update version in `pyproject.toml` and `src/term_workspace/__init__.py`
 2. Commit and push
-3. Create and push tag (example `v0.1.1`)
+3. Create and push tag (example `v0.2.0`)
 4. Workflow builds `wheel` / `sdist` and attaches them to GitHub Release
