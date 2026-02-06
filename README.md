@@ -59,7 +59,7 @@ python3 -m pip install --user git+https://github.com/KimJaehee0725/term-workspac
 ### Option 3: release wheel
 
 ```bash
-python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.2.3/term_workspace-0.2.3-py3-none-any.whl
+python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.2.4/term_workspace-0.2.4-py3-none-any.whl
 ```
 
 ## Screenshot
@@ -121,5 +121,5 @@ Release flow:
 1. Update version in `pyproject.toml` and `src/term_workspace/__init__.py`
 2. Update `CHANGELOG.md`
 3. Commit and push
-4. Create and push tag (example `v0.2.3`)
+4. Create and push tag (example `v0.2.4`)
 5. Workflow builds `wheel` / `sdist` and publishes GitHub Release assets

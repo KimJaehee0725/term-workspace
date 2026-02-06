@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4 - 2026-02-06
+
+- Auto-refresh status panel directory tree every 3 seconds to reflect filesystem changes
+
 ## 0.2.3 - 2026-02-06
 
 - Route status-panel directory/file actions to the dedicated right-bottom command pane

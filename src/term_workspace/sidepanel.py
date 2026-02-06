@@ -197,7 +197,11 @@ class SidePanelApp(App):
     def on_mount(self) -> None:
         self.query_one(DirectoryTree).focus()
         self.set_interval(1.0, self._refresh_stats)
+        self.set_interval(3.0, self._refresh_tree)
         self._refresh_stats()
+
+    def _refresh_tree(self) -> None:
+        self.query_one(DirectoryTree).reload()
 
     def _bar_style(self, percent: float) -> str:
         if percent >= 90.0:
