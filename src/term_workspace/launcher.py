@@ -74,8 +74,38 @@ def configure_interaction(session_name: str) -> None:
         check=False,
     )
 
-    # Disable pane drag selection to prevent accidental cross-pane drag behavior.
-    tmux(["unbind-key", "-T", "root", "MouseDrag1Pane"], check=False)
+    # Restrict drag-based selection to the currently active pane only.
+    drag_copy_cmd = 'if-shell -F "#{||:#{pane_in_mode},#{mouse_any_flag}}" "send-keys -M" "copy-mode -M"'
+    tmux(
+        [
+            "bind-key",
+            "-T",
+            "root",
+            "MouseDrag1Pane",
+            "if-shell",
+            "-F",
+            "#{pane_active}",
+            drag_copy_cmd,
+            "",
+        ],
+        check=False,
+    )
+
+    # In copy-mode, ignore drag events that originate from non-active panes.
+    tmux(
+        [
+            "bind-key",
+            "-T",
+            "copy-mode-vi",
+            "MouseDrag1Pane",
+            "if-shell",
+            "-F",
+            "#{pane_active}",
+            r"select-pane \; send-keys -X begin-selection",
+            "",
+        ],
+        check=False,
+    )
 
     # Dragging border resizes pane widths.
     tmux(["bind-key", "-T", "root", "MouseDown1Border", "select-pane", "-t="], check=False)
@@ -122,10 +152,11 @@ def configure_clipboard(session_name: str) -> None:
                 "-T",
                 "copy-mode-vi",
                 "MouseDragEnd1Pane",
-                "send-keys",
-                "-X",
-                "copy-pipe-and-cancel",
-                copy_cmd,
+                "if-shell",
+                "-F",
+                "#{pane_active}",
+                f"send-keys -X copy-pipe-and-cancel {shlex.quote(copy_cmd)}",
+                "",
             ],
             check=False,
         )

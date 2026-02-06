@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2 - 2026-02-06
+
+- Restrict drag-copy behavior to the active pane only
+- Prevent cross-pane mouse drag copy in multi-pane layouts
+- Keep border-drag resize and pane click pass-through behavior
+
 ## 0.2.1 - 2026-02-06
 
 - Add clickable file-open action in status panel tree for common text/code formats
