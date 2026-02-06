@@ -29,7 +29,7 @@ python3 -m pip install --user git+https://github.com/KimJaehee0725/term-workspac
 ### Option 3: from release wheel
 
 ```bash
-python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.1.0/tmux_devpanel-0.1.0-py3-none-any.whl
+python3 -m pip install --user https://github.com/KimJaehee0725/term-workspace/releases/download/v0.1.1/tmux_devpanel-0.1.1-py3-none-any.whl
 ```
 
 ## Run
@@ -79,5 +79,5 @@ Release flow:
 
 1. Update version in `pyproject.toml` and `src/term_devpanel/__init__.py`
 2. Commit and push
-3. Create and push tag (example `v0.1.0`)
+3. Create and push tag (example `v0.1.1`)
 4. Workflow builds `wheel` / `sdist` and attaches them to GitHub Release

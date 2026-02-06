@@ -39,7 +39,7 @@ def tmux_capture(args: list[str]) -> str:
 
 
 def session_exists(session_name: str) -> bool:
-    result = tmux(["has-session", "-t", session_name], check=False)
+    result = tmux(["has-session", "-t", session_name], check=False, capture=True)
     return result.returncode == 0
 
 
@@ -144,9 +144,34 @@ def sidepanel_command(root_dir: str, left_pane: str) -> str:
     return shlex.join(cmd)
 
 
+def _int_or_default(value: Optional[str], default: int) -> int:
+    try:
+        parsed = int(value or "")
+        return parsed if parsed > 0 else default
+    except (TypeError, ValueError):
+        return default
+
+
+def initial_tmux_size() -> tuple[int, int]:
+    # Detached tmux sessions may not have a known client size on some Linux setups.
+    # Provide explicit geometry so split-window can always compute sizes.
+    width = _int_or_default(os.environ.get("COLUMNS"), 200)
+    height = _int_or_default(os.environ.get("LINES"), 60)
+    width = max(80, min(width, 500))
+    height = max(24, min(height, 200))
+    return width, height
+
+
 def create_session(session_name: str, root_dir: str, panel_width_percent: int) -> None:
-    tmux(["new-session", "-d", "-s", session_name, "-c", root_dir])
-    tmux(["split-window", "-h", "-t", f"{session_name}:0", "-p", str(panel_width_percent), "-c", root_dir])
+    width, height = initial_tmux_size()
+    tmux(["new-session", "-d", "-s", session_name, "-c", root_dir, "-x", str(width), "-y", str(height)])
+
+    try:
+        tmux(["split-window", "-h", "-t", f"{session_name}:0", "-p", str(panel_width_percent), "-c", root_dir])
+    except subprocess.CalledProcessError:
+        # Fallback for tmux environments that reject percent-based sizing.
+        right_width = max(30, int(width * (panel_width_percent / 100.0)))
+        tmux(["split-window", "-h", "-t", f"{session_name}:0", "-l", str(right_width), "-c", root_dir])
 
     left_pane = tmux_capture(["display-message", "-p", "-t", f"{session_name}:0.0", "#{pane_id}"])
     right_pane = tmux_capture(["display-message", "-p", "-t", f"{session_name}:0.1", "#{pane_id}"])
